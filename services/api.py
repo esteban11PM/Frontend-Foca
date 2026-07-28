@@ -92,3 +92,27 @@ def generar_factura(payload_factura: dict):
     except requests.exceptions.RequestException as e:
         st.error(f"❌ Error crítico de conexión con el motor PDF: {e}")
         return None
+
+# ==========================================
+# 4. SERVICIOS DE CONFIGURACIÓN
+# ==========================================
+
+def obtener_consecutivo():
+    try:
+        response = requests.get(f"{BASE_URL}/consecutivo/")
+        if response.status_code == 200:
+            return response.json()
+        return None
+    except requests.exceptions.RequestException as e:
+        st.error(f"❌ Error al obtener consecutivo: {e}")
+        return None
+
+def actualizar_consecutivo(payload: dict):
+    try:
+        response = requests.put(f"{BASE_URL}/consecutivo/", json=payload)
+        if response.status_code == 200:
+            return response.json()
+        return None
+    except requests.exceptions.RequestException as e:
+        st.error(f"❌ Error al actualizar consecutivo: {e}")
+        return None
