@@ -1,14 +1,10 @@
 import streamlit as st
-from services.api import obtener_consecutivo, actualizar_consecutivo
+from services.api import obtener_consecutivo, actualizar_consecutivo, validar_sesion
 
 st.set_page_config(page_title="Configuración | RHE", page_icon="⚙️")
-
-# --- GUARDIA DE SEGURIDAD ---
-if not st.session_state.get("autenticado", False):
+if not validar_sesion():
     st.warning("⚠️ Debes iniciar sesión para acceder a esta página.")
     st.stop()
-# ----------------------------
-
 st.title("⚙️ Configuración del Sistema")
 
 st.subheader("Modificación del Consecutivo de Facturación")

@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import base64
 import json
+from services.api import validar_sesion
 
 # Configuración inicial (Debe ser el primer comando)
 st.set_page_config(page_title="RHE - Dashboard", page_icon="🧾", layout="centered")
@@ -23,15 +24,18 @@ def iniciar_sesion():
             if respuesta.status_code == 200:
                 datos = respuesta.json()
                 token = datos.get("access_token")
-                
-                # Magia RHE: Decodificamos el JWT para extraer tu USUARIO_ID real
+
                 payload_base64 = token.split(".")[1]
                 payload_base64 += "=" * (-len(payload_base64) % 4)
                 payload_decodificado = json.loads(base64.b64decode(payload_base64).decode("utf-8"))
-                
+
                 st.session_state["access_token"] = token
                 st.session_state["usuario_id"] = payload_decodificado["sub"]
                 st.session_state["autenticado"] = True
+
+                # 🔑 MAGIA: Guardamos el token en la URL para que resista recargas (F5)
+                st.query_params["token"] = token
+
                 st.success("¡Acceso concedido!")
                 st.rerun()
             else:
@@ -40,14 +44,14 @@ def iniciar_sesion():
             st.warning("Por favor, ingresa ambos campos.")
 
 def cerrar_sesion():
-    st.session_state.clear() # Limpiamos toda la memoria
+    st.session_state.clear()
+    st.query_params.clear() # Limpiamos la URL al salir
     st.rerun()
 
 def dashboard():
     st.title("Bienvenido al Panel de Control 🚀")
     st.write("Tu sistema está seguro y operando correctamente. Utiliza el menú lateral para navegar.")
-    
-    # Botón para cerrar sesión en el menú lateral
+
     st.sidebar.title("Navegación")
     st.sidebar.button("Cerrar Sesión", on_click=cerrar_sesion)
     st.sidebar.markdown("---")
@@ -55,10 +59,8 @@ def dashboard():
 # ==========================================
 # CEREBRO DEL FRONTEND
 # ==========================================
-if "autenticado" not in st.session_state:
-    st.session_state["autenticado"] = False
-
-if not st.session_state["autenticado"]:
+# Validar/restaurar sesión automáticamente
+if not validar_sesion():
     iniciar_sesion()
 else:
     dashboard()

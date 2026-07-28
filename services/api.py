@@ -1,5 +1,7 @@
 import requests
 import streamlit as st
+import base64
+import json
 
 # La dirección donde vive nuestro Backend (FastAPI)
 BASE_URL = "http://127.0.0.1:8000"
@@ -116,3 +118,30 @@ def actualizar_consecutivo(payload: dict):
     except requests.exceptions.RequestException as e:
         st.error(f"❌ Error al actualizar consecutivo: {e}")
         return None
+
+def validar_sesion() -> bool:
+    """Revisa si hay un token activo en session_state o recupera la sesión desde la URL si hubo F5."""
+    # 1. Si ya está autenticado en memoria, continuar
+    if st.session_state.get("autenticado", False):
+        return True
+
+    # 2. Si hubo recarga (F5), buscar el token guardado en la URL
+    token_in_url = st.query_params.get("token")
+    if token_in_url:
+        try:
+            # Decodificamos el JWT para recuperar el usuario_id
+            payload_base64 = token_in_url.split(".")[1]
+            payload_base64 += "=" * (-len(payload_base64) % 4)
+            payload_decodificado = json.loads(base64.b64decode(payload_base64).decode("utf-8"))
+
+            st.session_state["access_token"] = token_in_url
+            st.session_state["usuario_id"] = payload_decodificado["sub"]
+            st.session_state["autenticado"] = True
+            return True
+        except Exception:
+            # Si el token era inválido o caducó, limpiamos
+            st.query_params.clear()
+            st.session_state.clear()
+            return False
+
+    return False
