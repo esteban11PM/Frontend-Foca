@@ -3,6 +3,9 @@ from datetime import datetime
 from services.api import buscar_cliente, buscar_producto, generar_factura
 
 st.set_page_config(page_title="Facturación | RHE", page_icon="🧾", layout="wide")
+if not st.session_state.get("autenticado", False):
+    st.warning("⚠️ Debes iniciar sesión para acceder a esta página.")
+    st.stop()
 st.title("🧾 Generador de Facturas")
 
 # --- ESTADO DE LA SESIÓN ---
@@ -11,9 +14,6 @@ if 'cliente_actual' not in st.session_state:
     st.session_state['cliente_actual'] = None
 if 'productos_agregados' not in st.session_state:
     st.session_state['productos_agregados'] = []
-
-# ⚠️ IMPORTANTE: Pega aquí el UUID de tu usuario administrador de Supabase
-USUARIO_ID = "87210022-a4bc-49bb-acd1-dbe8d6680219" 
 
 col1, col2 = st.columns([1, 1])
 
@@ -93,7 +93,7 @@ with col2:
             # Estructuración del JSON exacto que espera FastAPI
             payload = {
                 "cliente_id": st.session_state['cliente_actual']['id'],
-                "usuario_id": USUARIO_ID,
+                "usuario_id": st.session_state["usuario_id"],
                 "hora_generacion": ahora.strftime("%H:%M:%S"),
                 "hora_expedicion": ahora.strftime("%H:%M:%S"),
                 "detalles": [

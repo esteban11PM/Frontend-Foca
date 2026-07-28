@@ -2,6 +2,9 @@ import streamlit as st
 from services.api import crear_producto, buscar_producto
 
 st.set_page_config(page_title="Productos | RHE", page_icon="📦")
+if not st.session_state.get("autenticado", False):
+    st.warning("⚠️ Debes iniciar sesión para acceder a esta página.")
+    st.stop()
 st.title("📦 Catálogo de Productos")
 
 tab_registro, tab_busqueda = st.tabs(["Registrar Producto", "Buscar Producto"])

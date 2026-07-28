@@ -2,6 +2,9 @@ import streamlit as st
 from services.api import crear_cliente, buscar_cliente
 
 st.set_page_config(page_title="Clientes | RHE", page_icon="👥")
+if not st.session_state.get("autenticado", False):
+    st.warning("⚠️ Debes iniciar sesión para acceder a esta página.")
+    st.stop()
 st.title("👥 Gestión de Clientes")
 
 # Creación de pestañas para organizar la vista
