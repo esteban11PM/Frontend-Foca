@@ -1,0 +1,14 @@
+[theme]
+# Verde principal
+primaryColor = "#2E8B57"
+
+# Fondo
+backgroundColor = "#0e1117"
+
+# Superficie (sidebar y elementos secundarios)
+secondaryBackgroundColor = "#181B22"
+
+# Texto principal
+textColor = "#F4F4F5"
+
+font = "sans serif"
