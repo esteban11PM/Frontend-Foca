@@ -8,6 +8,17 @@ BASE_URL = "http://127.0.0.1:8000"
 # 1. SERVICIOS DE CLIENTES
 # ==========================================
 
+def obtener_clientes():
+    """Envía petición GET para traer todos los clientes."""
+    try:
+        response = requests.get(f"{BASE_URL}/clientes/")
+        if response.status_code == 200:
+            return response.json()
+        return []
+    except requests.exceptions.RequestException as e:
+        st.error(f"❌ Error al obtener clientes: {e}")
+        return []
+
 def crear_cliente(datos_cliente: dict):
     """Envía la petición POST para registrar un nuevo cliente."""
     try:
@@ -32,6 +43,17 @@ def buscar_cliente(identificacion: str):
 # ==========================================
 # 2. SERVICIOS DE PRODUCTOS
 # ==========================================
+
+def obtener_productos():
+    """Envía petición GET para traer todos los productos."""
+    try:
+        response = requests.get(f"{BASE_URL}/productos/")
+        if response.status_code == 200:
+            return response.json()
+        return []
+    except requests.exceptions.RequestException as e:
+        st.error(f"❌ Error al obtener productos: {e}")
+        return []
 
 def crear_producto(datos_producto: dict):
     """Envía la petición POST para registrar un nuevo producto en el catálogo."""

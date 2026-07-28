@@ -1,5 +1,6 @@
 import streamlit as st
-from services.api import crear_cliente, buscar_cliente
+import pandas as pd
+from services.api import crear_cliente, obtener_clientes
 
 st.set_page_config(page_title="Clientes | RHE", page_icon="👥")
 if not st.session_state.get("autenticado", False):
@@ -8,9 +9,29 @@ if not st.session_state.get("autenticado", False):
 st.title("👥 Gestión de Clientes")
 
 # Creación de pestañas para organizar la vista
-tab_registro, tab_busqueda = st.tabs(["Registrar Cliente", "Buscar Cliente"])
+tab_lista, tab_registro = st.tabs(["Listado de Clientes", "Registrar Cliente"])
 
-# --- PESTAÑA 1: REGISTRO ---
+# --- PESTAÑA 1: LISTADO ---
+with tab_lista:
+    st.subheader("Directorio de Clientes")
+    if st.button("🔄 Actualizar Lista"):
+        st.rerun()
+        
+    clientes = obtener_clientes()
+    
+    if clientes:
+        # Convertimos la lista de diccionarios a un DataFrame para que se vea como tabla
+        df_clientes = pd.DataFrame(clientes)
+        # Reordenamos y renombramos columnas para la vista
+        df_clientes = df_clientes[["identificacion", "nombre"]]
+        df_clientes.columns = ["NIT / CC", "Nombre o Razón Social"]
+        
+        # Mostramos la tabla interactiva (permite ordenar y hacer scroll)
+        st.dataframe(df_clientes, use_container_width=True, hide_index=True)
+    else:
+        st.info("No hay clientes registrados en el sistema.")
+
+# --- PESTAÑA 2: REGISTRO ---
 with tab_registro:
     st.subheader("Registrar Nuevo Cliente")
     with st.form("form_crear_cliente", clear_on_submit=True):
@@ -30,18 +51,3 @@ with tab_registro:
                     st.success(f"✅ Cliente '{respuesta['nombre']}' registrado exitosamente.")
             else:
                 st.warning("⚠️ Por favor, completa todos los campos.")
-
-# --- PESTAÑA 2: BÚSQUEDA ---
-with tab_busqueda:
-    st.subheader("Consultar Cliente Existente")
-    search_id = st.text_input("Ingrese NIT o CC para buscar:")
-    
-    if st.button("Buscar Cliente"):
-        if search_id:
-            cliente = buscar_cliente(search_id)
-            if cliente:
-                st.success("✅ Cliente encontrado en la base de datos.")
-                # Tarjeta de resumen visual
-                st.info(f"**Nombre:** {cliente['nombre']}\n\n**Identificación:** {cliente['identificacion']}")
-        else:
-            st.warning("⚠️ Ingresa un número de identificación válido.")

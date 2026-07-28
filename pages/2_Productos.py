@@ -1,5 +1,6 @@
 import streamlit as st
-from services.api import crear_producto, buscar_producto
+import pandas as pd
+from services.api import crear_producto, obtener_productos
 
 st.set_page_config(page_title="Productos | RHE", page_icon="📦")
 if not st.session_state.get("autenticado", False):
@@ -7,9 +8,31 @@ if not st.session_state.get("autenticado", False):
     st.stop()
 st.title("📦 Catálogo de Productos")
 
-tab_registro, tab_busqueda = st.tabs(["Registrar Producto", "Buscar Producto"])
+tab_lista, tab_registro = st.tabs(["Listado de Productos", "Registrar Producto"])
 
-# --- PESTAÑA 1: REGISTRO ---
+# --- PESTAÑA 1: LISTADO ---
+with tab_lista:
+    st.subheader("Inventario Actual")
+    if st.button("🔄 Actualizar Catálogo"):
+        st.rerun()
+        
+    productos = obtener_productos()
+    
+    if productos:
+        df_productos = pd.DataFrame(productos)
+        df_productos = df_productos[["codigo", "descripcion", "precio_base"]]
+        df_productos.columns = ["Código", "Descripción", "Precio Base ($)"]
+        
+        # Le damos formato moneda a la columna de precio
+        st.dataframe(
+            df_productos.style.format({"Precio Base ($)": "{:,.2f}"}), 
+            use_container_width=True, 
+            hide_index=True
+        )
+    else:
+        st.info("El catálogo de productos está vacío.")
+
+# --- PESTAÑA 2: REGISTRO ---
 with tab_registro:
     st.subheader("Registrar Nuevo Producto")
     with st.form("form_crear_producto", clear_on_submit=True):
@@ -31,17 +54,3 @@ with tab_registro:
                     st.success(f"✅ Producto '{respuesta['descripcion']}' registrado exitosamente.")
             else:
                 st.warning("⚠️ Completa todos los campos correctamente.")
-
-# --- PESTAÑA 2: BÚSQUEDA ---
-with tab_busqueda:
-    st.subheader("Consultar Producto Existente")
-    search_code = st.text_input("Ingrese Código del Producto:")
-    
-    if st.button("Buscar Producto"):
-        if search_code:
-            producto = buscar_producto(search_code)
-            if producto:
-                st.success("✅ Producto encontrado.")
-                st.info(f"**Código:** {producto['codigo']}\n\n**Descripción:** {producto['descripcion']}\n\n**Precio Base:** ${producto['precio_base']:,.2f}")
-        else:
-            st.warning("⚠️ Ingresa un código válido.")
