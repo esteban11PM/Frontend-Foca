@@ -3,17 +3,23 @@ from datetime import datetime
 from services.api import buscar_cliente, buscar_producto, generar_factura
 
 st.set_page_config(page_title="Facturación | RHE", page_icon="🧾", layout="wide")
+
+# --- GUARDIA DE SEGURIDAD ---
 if not st.session_state.get("autenticado", False):
     st.warning("⚠️ Debes iniciar sesión para acceder a esta página.")
     st.stop()
+# ----------------------------
+
 st.title("🧾 Generador de Facturas")
 
 # --- ESTADO DE LA SESIÓN ---
-# Memoria temporal para guardar el cliente y los productos de la factura en curso
 if 'cliente_actual' not in st.session_state:
     st.session_state['cliente_actual'] = None
 if 'productos_agregados' not in st.session_state:
     st.session_state['productos_agregados'] = []
+# Nueva variable temporal para retener el producto antes de agregarlo
+if 'producto_temp' not in st.session_state:
+    st.session_state['producto_temp'] = None
 
 col1, col2 = st.columns([1, 1])
 
@@ -35,27 +41,61 @@ with col1:
     st.divider()
 
     st.subheader("2. Agregar Productos")
-    codigo_prod = st.text_input("Código del Producto:")
-    cantidad = st.number_input("Cantidad", min_value=1.0, step=1.0)
     
-    if st.button("Agregar a la Factura"):
-        if len(st.session_state['productos_agregados']) >= 3:
-            st.warning("⚠️ Límite de 3 productos alcanzado según la plantilla.")
-        elif codigo_prod:
+    # PASO 1: Buscar el producto
+    codigo_prod = st.text_input("Código del Producto:")
+    
+    if st.button("Buscar Producto"):
+        if codigo_prod:
             producto = buscar_producto(codigo_prod)
             if producto:
-                detalle = {
-                    "producto_id": producto["id"],
-                    "codigo": producto["codigo"],
-                    "descripcion": producto["descripcion"],
-                    "cantidad": cantidad,
-                    "precio_aplicado": producto["precio_base"],
-                    "subtotal": cantidad * producto["precio_base"]
-                }
-                st.session_state['productos_agregados'].append(detalle)
-                st.success(f"✅ {producto['descripcion']} agregado.")
+                # Si existe, lo guardamos temporalmente para configurar precio y cantidad
+                st.session_state['producto_temp'] = producto
             else:
-                st.error("❌ Código de producto inválido.")
+                st.error("❌ Código de producto inválido o no encontrado.")
+        else:
+            st.warning("⚠️ Ingresa un código para buscar.")
+            
+    # PASO 2: Configurar Precio y Cantidad (Solo aparece si se encontró el producto)
+    if st.session_state['producto_temp']:
+        prod_temp = st.session_state['producto_temp']
+        st.info(f"📦 **Producto Encontrado:** {prod_temp['descripcion']}")
+        
+        with st.form("form_ajuste_producto"):
+            # Aquí es donde ocurre la magia: Carga el precio base por defecto, pero lo deja editable
+            precio_aplicado = st.number_input(
+                "Precio Unitario a Aplicar ($)", 
+                min_value=0.0, 
+                value=float(prod_temp['precio_base']), 
+                step=100.0
+            )
+            cantidad = st.number_input("Cantidad", min_value=1.0, step=1.0)
+            
+            col_add, col_cancel = st.columns(2)
+            with col_add:
+                btn_agregar = st.form_submit_button("➕ Agregar a Factura", type="primary")
+            with col_cancel:
+                btn_cancelar = st.form_submit_button("❌ Cancelar")
+                
+            if btn_agregar:
+                if len(st.session_state['productos_agregados']) >= 3:
+                    st.error("⚠️ Límite de 3 productos alcanzado según la plantilla.")
+                else:
+                    detalle = {
+                        "producto_id": prod_temp["id"],
+                        "codigo": prod_temp["codigo"],
+                        "descripcion": prod_temp["descripcion"],
+                        "cantidad": cantidad,
+                        "precio_aplicado": precio_aplicado,
+                        "subtotal": cantidad * precio_aplicado # Se recalcula dinámicamente
+                    }
+                    st.session_state['productos_agregados'].append(detalle)
+                    st.session_state['producto_temp'] = None # Limpiamos la memoria temporal
+                    st.rerun() # Refrescamos para ver el resumen actualizado
+            
+            if btn_cancelar:
+                st.session_state['producto_temp'] = None
+                st.rerun()
 
 # ==========================================
 # COLUMNA 2: RESUMEN Y GENERACIÓN
@@ -93,7 +133,7 @@ with col2:
             # Estructuración del JSON exacto que espera FastAPI
             payload = {
                 "cliente_id": st.session_state['cliente_actual']['id'],
-                "usuario_id": st.session_state["usuario_id"],
+                "usuario_id": st.session_state["usuario_id"], # ID Dinámico del usuario que inició sesión
                 "hora_generacion": ahora.strftime("%H:%M:%S"),
                 "hora_expedicion": ahora.strftime("%H:%M:%S"),
                 "detalles": [
