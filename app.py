@@ -43,11 +43,10 @@ else:
     # Si HAY sesión, armamos el menú completo
     inicio_page = st.Page("views/dashboard.py", title="Panel Principal", icon="🚀", default=True)
     facturacion_page = st.Page("pages/1_Facturacion.py", title="Facturación", icon="🧾")
-    config_page = st.Page("pages/2_Configuracion.py", title="Configuración", icon="⚙️")
-    clientes_page = st.Page("pages/3_Clientes.py", title="Clientes", icon="👥")
-    productos_page = st.Page("pages/4_Productos.py", title="Productos", icon="📦")
+    clientes_page = st.Page("pages/2_Clientes.py", title="Clientes", icon="👥")
+    productos_page = st.Page("pages/3_Productos.py", title="Productos", icon="📦")
     
-    pg = st.navigation([inicio_page, facturacion_page, config_page, clientes_page, productos_page])
+    pg = st.navigation([inicio_page, facturacion_page, clientes_page, productos_page])
     
     # Colocamos el botón de cerrar sesión en la barra lateral para que salga en TODAS las páginas
     st.sidebar.button("Cerrar Sesión", on_click=cerrar_sesion)
