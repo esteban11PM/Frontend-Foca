@@ -1,7 +1,7 @@
 import streamlit as st
 from services.api import obtener_consecutivo, actualizar_consecutivo, validar_sesion
 
-st.set_page_config(page_title="Configuración | RHE", page_icon="⚙️")
+
 if not validar_sesion():
     st.warning("⚠️ Debes iniciar sesión para acceder a esta página.")
     st.stop()

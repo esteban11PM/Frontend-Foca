@@ -2,7 +2,6 @@ import streamlit as st
 from datetime import datetime
 from services.api import obtener_clientes, buscar_producto, generar_factura, validar_sesion
 
-st.set_page_config(page_title="Facturación | RHE", page_icon="🧾", layout="wide")
 if not validar_sesion():
     st.warning("⚠️ Debes iniciar sesión para acceder a esta página.")
     st.stop()

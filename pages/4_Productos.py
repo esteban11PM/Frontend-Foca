@@ -2,7 +2,6 @@ import streamlit as st
 import pandas as pd
 from services.api import crear_producto, obtener_productos, validar_sesion
 
-st.set_page_config(page_title="Productos | RHE", page_icon="📦")
 if not validar_sesion():
     st.warning("⚠️ Debes iniciar sesión para acceder a esta página.")
     st.stop()
