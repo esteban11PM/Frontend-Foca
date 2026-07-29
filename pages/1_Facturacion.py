@@ -139,13 +139,43 @@ with col2:
         )
         st.markdown(f"<h3 style='text-align: right;'>Total: ${total_factura:,.2f}</h3>", unsafe_allow_html=True)
         
-        if st.button("🗑️ Limpiar Productos", use_container_width=True):
+        # --- NUEVA SECCIÓN: LIMPIEZA INDIVIDUAL ---
+        st.markdown("**Gestión de items:**")
+        
+        # Iteramos sobre la lista para crear una fila por producto con su propio botón
+        for i, prod in enumerate(st.session_state['productos_agregados']):
+            c_texto, c_boton = st.columns([3, 1])
+            with c_texto:
+                # Mostramos qué producto es para que el vendedor esté seguro de qué va a borrar
+                st.write(f"▪️ {prod['cantidad']}x {prod['descripcion']}")
+            with c_boton:
+                # El parámetro 'key' es obligatorio y vital en Streamlit cuando creamos botones en un ciclo (for)
+                if st.button("❌ Quitar", key=f"quitar_{i}", use_container_width=True):
+                    # pop(i) elimina exactamente ese elemento de la lista en memoria
+                    st.session_state['productos_agregados'].pop(i)
+                    st.rerun()
+
+        st.write("") # Pequeño espacio visual
+        
+        # Mantenemos el botón maestro por si quieren descartar toda la factura de un golpe
+        if st.button("🗑️ Limpiar Todos los Productos", use_container_width=True):
             st.session_state['productos_agregados'] = []
             st.rerun()
 
     st.divider()
 
-    if st.button("🚀 Generar Factura PDF", type="primary"):
+    # ==========================================
+    # BOTÓN MAESTRO DE GENERACIÓN (CENTRADITO)
+    # ==========================================
+    # Creamos 3 sub-columnas. Ajusta las proporciones [1, 2, 1] si lo quieres más ancho o estrecho.
+    col_vacia1, col_btn_generar, col_vacia2 = st.columns([1, 2, 1])
+    
+    with col_btn_generar:
+        # Asignamos el botón a una variable y le ponemos use_container_width=True
+        btn_generar = st.button("🚀 Generar Factura PDF", type="primary", use_container_width=True)
+
+    # Ahora evaluamos si se hizo clic en esa variable
+    if btn_generar:
         if not st.session_state['cliente_actual']:
             st.error("⚠️ Por favor, selecciona un cliente primero.")
         elif not st.session_state['productos_agregados']:
@@ -169,13 +199,10 @@ with col2:
             with st.spinner("Procesando y generando PDF en el servidor..."):
                 respuesta = generar_factura(payload)
                 if respuesta:
-                    # 1. Guardamos el mensaje en la memoria antes de recargar
                     st.session_state['toast_msg'] = f"🎉 ¡Éxito! Factura {respuesta['numero_factura']} generada."
                     st.session_state['toast_icon'] = "✅"
                     
-                    # 2. Limpieza de variables
                     st.session_state['cliente_actual'] = None
                     st.session_state['productos_agregados'] = []
                     
-                    # 3. Recargamos la pantalla
                     st.rerun()
