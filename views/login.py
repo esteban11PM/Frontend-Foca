@@ -1,7 +1,6 @@
 import streamlit as st
 import requests
-import base64
-import json
+from services.api import decodificar_token  # Importamos la función centralizada
 
 API_URL = "http://127.0.0.1:8000"
 
@@ -20,15 +19,15 @@ with st.form("login_form"):
             datos = respuesta.json()
             token = datos.get("access_token")
 
-            payload_base64 = token.split(".")[1]
-            payload_base64 += "=" * (-len(payload_base64) % 4)
-            payload_decodificado = json.loads(base64.urlsafe_b64decode(payload_base64).decode("utf-8"))
+            # 1. Usamos nuestra función mágica
+            payload_decodificado = decodificar_token(token)
 
+            # 2. Asignamos variables de sesión
             st.session_state["access_token"] = token
-            st.session_state["usuario_id"] = payload_decodificado["sub"]
+            st.session_state["usuario_id"] = payload_decodificado.get("sub")
             st.session_state["autenticado"] = True
 
-            # Guardamos el token en la URL
+            # 3. Guardamos en URL
             st.query_params["token"] = token
 
             st.success("¡Acceso concedido!")

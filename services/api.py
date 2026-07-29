@@ -159,3 +159,45 @@ def validar_sesion() -> bool:
             return False
 
     return False
+
+# ==========================================
+# 5. SERVICIOS DE AUTENTICACIÓN Y UTILIDADES
+# ==========================================
+
+def decodificar_token(token: str) -> dict:
+    """Decodifica un token JWT y devuelve su payload de forma segura."""
+    try:
+        payload_base64 = token.split(".")[1]
+        payload_base64 += "=" * (-len(payload_base64) % 4)
+        return json.loads(base64.urlsafe_b64decode(payload_base64).decode("utf-8"))
+    except Exception as e:
+        return {}
+
+def validar_sesion() -> bool:
+    """Revisa si hay un token activo en session_state o recupera la sesión desde la URL si hubo F5."""
+    
+    # 1. Si ya estamos autenticados en memoria (Navegación normal)
+    if st.session_state.get("autenticado", False) and "access_token" in st.session_state:
+        st.query_params["token"] = st.session_state["access_token"]
+        return True
+
+    # 2. Si hubo recarga (F5) y se perdió la memoria, buscamos el token guardado en la URL
+    token_in_url = st.query_params.get("token")
+    if token_in_url:
+        payload_decodificado = decodificar_token(token_in_url)
+        
+        # Si la decodificación fue exitosa (el diccionario no está vacío)
+        if payload_decodificado:
+            st.session_state["access_token"] = token_in_url
+            st.session_state["usuario_id"] = payload_decodificado.get("sub")
+            st.session_state["autenticado"] = True
+            
+            st.query_params["token"] = token_in_url
+            return True
+        else:
+            # Token inválido o corrupto
+            st.query_params.clear()
+            st.session_state.clear()
+            return False
+
+    return False
