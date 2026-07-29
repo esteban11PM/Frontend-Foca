@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 from datetime import datetime
 from services.api import obtener_clientes, buscar_producto, generar_factura, validar_sesion
 
@@ -111,22 +112,34 @@ with col1:
 with col2:
     st.subheader("3. Resumen de la Transacción")
     
-    # Mostrar Cliente
-    if st.session_state['cliente_actual']:
-        st.info(f"**Cliente a Facturar:** {st.session_state['cliente_actual']['nombre']}")
-    else:
-        st.info("No se ha seleccionado ningún cliente.")
-    
     # Mostrar Productos y Total
-    total_factura = 0.0
     if st.session_state['productos_agregados']:
-        for p in st.session_state['productos_agregados']:
-            st.write(f"▪️ {p['cantidad']}x **{p['descripcion']}** | Subtotal: ${p['subtotal']:,.2f}")
-            total_factura += p['subtotal']
+        # Convertimos la lista de diccionarios en un DataFrame
+        df_resumen = pd.DataFrame(st.session_state['productos_agregados'])
         
-        st.write(f"### **Total: ${total_factura:,.2f}**")
+        # Calculamos el total de forma eficiente
+        total_factura = df_resumen['subtotal'].sum()
         
-        if st.button("🗑️ Limpiar Productos"):
+        # Renderizamos la tabla con formatos específicos
+        st.dataframe(
+            df_resumen,
+            # Seleccionamos solo las columnas que el usuario necesita ver y en qué orden
+            column_order=("cantidad", "descripcion", "precio_aplicado", "subtotal"),
+            column_config={
+                "cantidad": st.column_config.NumberColumn("Cant.", step=1),
+                "descripcion": "Producto",
+                "precio_aplicado": st.column_config.NumberColumn("Precio Uni.", format="$ %.2f"),
+                "subtotal": st.column_config.NumberColumn("Subtotal", format="$ %.2f"),
+            },
+            hide_index=True,
+            use_container_width=True
+        )
+        
+        # Mostramos el total alineado a la derecha (estilo factura clásica)
+        st.markdown(f"<h3 style='text-align: right;'>Total: ${total_factura:,.2f}</h3>", unsafe_allow_html=True)
+        
+        # Hacemos que el botón ocupe todo el ancho para mantener armonía visual
+        if st.button("🗑️ Limpiar Productos", use_container_width=True):
             st.session_state['productos_agregados'] = []
             st.rerun()
 
@@ -157,12 +170,12 @@ with col2:
             with st.spinner("Procesando y generando PDF en el servidor..."):
                 respuesta = generar_factura(payload)
                 if respuesta:
-                    st.success(f"🎉 ¡Éxito! Factura **{respuesta['numero_factura']}** generada y registrada en la base de datos.")
+                    # 1. Lanzamos el mensaje flotante en lugar del st.success estático
+                    st.toast(f"🎉 ¡Éxito! Factura {respuesta['numero_factura']} generada.", icon="✅")
                     
-                    # Limpieza post-facturación
+                    # 2. Limpieza post-facturación
                     st.session_state['cliente_actual'] = None
                     st.session_state['productos_agregados'] = []
-                    # Un pequeño sleep y rerun limpia visualmente el selectbox
-                    import time
-                    time.sleep(1.5)
+                    
+                    # 3. Recarga instantánea (adiós import time y time.sleep)
                     st.rerun()

@@ -10,6 +10,7 @@ BASE_URL = "http://127.0.0.1:8000"
 # 1. SERVICIOS DE CLIENTES
 # ==========================================
 
+@st.cache_data(ttl=300)
 def obtener_clientes():
     """Envía petición GET para traer todos los clientes."""
     try:
@@ -26,6 +27,9 @@ def crear_cliente(datos_cliente: dict):
     try:
         response = requests.post(f"{BASE_URL}/clientes/", json=datos_cliente)
         response.raise_for_status()
+
+        obtener_clientes.clear()
+
         return response.json()
     except requests.exceptions.RequestException as e:
         st.error(f"❌ Error de conexión al crear cliente: {e}")
@@ -46,6 +50,7 @@ def buscar_cliente(identificacion: str):
 # 2. SERVICIOS DE PRODUCTOS
 # ==========================================
 
+@st.cache_data(ttl=300)
 def obtener_productos():
     """Envía petición GET para traer todos los productos."""
     try:
@@ -62,6 +67,9 @@ def crear_producto(datos_producto: dict):
     try:
         response = requests.post(f"{BASE_URL}/productos/", json=datos_producto)
         response.raise_for_status()
+
+        obtener_productos.clear()
+
         return response.json()
     except requests.exceptions.RequestException as e:
         st.error(f"❌ Error de conexión al crear producto: {e}")

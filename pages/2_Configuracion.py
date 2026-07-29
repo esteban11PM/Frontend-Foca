@@ -31,9 +31,8 @@ if consecutivo_actual:
             payload = {"prefijo": prefijo, "numero_actual": numero}
             respuesta = actualizar_consecutivo(payload)
             if respuesta:
-                st.success(f"✅ Consecutivo actualizado correctamente. Próxima factura será: **{respuesta['prefijo']}{respuesta['numero_actual']}**")
+                # 1. Mensaje flotante con el nuevo consecutivo
+                st.toast(f"✅ Consecutivo actualizado a: {respuesta['prefijo']}{respuesta['numero_actual']}", icon="⚙️")
                 
-                # Pequeño truco para que la vista se recargue con los datos nuevos
-                import time
-                time.sleep(1.5)
+                # 2. Recarga inmediata para reflejar los datos visualmente
                 st.rerun()
