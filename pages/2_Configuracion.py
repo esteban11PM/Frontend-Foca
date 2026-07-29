@@ -5,7 +5,17 @@ from services.api import obtener_consecutivo, actualizar_consecutivo, validar_se
 if not validar_sesion():
     st.warning("⚠️ Debes iniciar sesión para acceder a esta página.")
     st.stop()
+
 st.title("⚙️ Configuración del Sistema")
+
+# ==========================================
+# RECOLECTOR DE NOTIFICACIONES PENDIENTES
+# ==========================================
+if 'toast_msg' in st.session_state:
+    st.toast(st.session_state['toast_msg'], icon=st.session_state.get('toast_icon', "⚙️"))
+    del st.session_state['toast_msg']
+    if 'toast_icon' in st.session_state:
+        del st.session_state['toast_icon']
 
 st.subheader("Modificación del Consecutivo de Facturación")
 st.write("Ajusta el prefijo y el número desde el cual se generará la próxima factura.")
@@ -13,16 +23,16 @@ st.write("Ajusta el prefijo y el número desde el cual se generará la próxima 
 # Consultamos el dato actual a la base de datos
 consecutivo_actual = obtener_consecutivo()
 
+consecutivo_actual = obtener_consecutivo()
+
 if consecutivo_actual:
     with st.form("form_consecutivo"):
         col1, col2 = st.columns(2)
         
         with col1:
-            # Mostramos el prefijo actual y permitimos cambiarlo
             prefijo = st.text_input("Prefijo de Factura", value=consecutivo_actual["prefijo"])
         
         with col2:
-            # Mostramos el número actual. El step=1 asegura que solo suba de a 1 número entero
             numero = st.number_input("Número Actual", value=consecutivo_actual["numero_actual"], min_value=1, step=1)
             
         submit = st.form_submit_button("Guardar Cambios", type="primary")
@@ -31,8 +41,9 @@ if consecutivo_actual:
             payload = {"prefijo": prefijo, "numero_actual": numero}
             respuesta = actualizar_consecutivo(payload)
             if respuesta:
-                # 1. Mensaje flotante con el nuevo consecutivo
-                st.toast(f"✅ Consecutivo actualizado a: {respuesta['prefijo']}{respuesta['numero_actual']}", icon="⚙️")
+                # 1. Guardamos el mensaje en la memoria antes de recargar
+                st.session_state['toast_msg'] = f"✅ Consecutivo actualizado a: {respuesta['prefijo']}{respuesta['numero_actual']}"
+                st.session_state['toast_icon'] = "🚀"
                 
-                # 2. Recarga inmediata para reflejar los datos visualmente
+                # 2. Recargamos la pantalla
                 st.rerun()

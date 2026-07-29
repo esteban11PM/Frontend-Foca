@@ -8,6 +8,15 @@ if not validar_sesion():
     st.stop()
 st.title("🧾 Generador de Facturas")
 
+# ==========================================
+# RECOLECTOR DE NOTIFICACIONES PENDIENTES
+# ==========================================
+if 'toast_msg' in st.session_state:
+    st.toast(st.session_state['toast_msg'], icon=st.session_state.get('toast_icon', "✅"))
+    del st.session_state['toast_msg']
+    if 'toast_icon' in st.session_state:
+        del st.session_state['toast_icon']
+
 # --- ESTADO DE LA SESIÓN ---
 if 'cliente_actual' not in st.session_state:
     st.session_state['cliente_actual'] = None
@@ -112,18 +121,12 @@ with col1:
 with col2:
     st.subheader("3. Resumen de la Transacción")
     
-    # Mostrar Productos y Total
     if st.session_state['productos_agregados']:
-        # Convertimos la lista de diccionarios en un DataFrame
         df_resumen = pd.DataFrame(st.session_state['productos_agregados'])
-        
-        # Calculamos el total de forma eficiente
         total_factura = df_resumen['subtotal'].sum()
         
-        # Renderizamos la tabla con formatos específicos
         st.dataframe(
             df_resumen,
-            # Seleccionamos solo las columnas que el usuario necesita ver y en qué orden
             column_order=("cantidad", "descripcion", "precio_aplicado", "subtotal"),
             column_config={
                 "cantidad": st.column_config.NumberColumn("Cant.", step=1),
@@ -134,18 +137,14 @@ with col2:
             hide_index=True,
             use_container_width=True
         )
-        
-        # Mostramos el total alineado a la derecha (estilo factura clásica)
         st.markdown(f"<h3 style='text-align: right;'>Total: ${total_factura:,.2f}</h3>", unsafe_allow_html=True)
         
-        # Hacemos que el botón ocupe todo el ancho para mantener armonía visual
         if st.button("🗑️ Limpiar Productos", use_container_width=True):
             st.session_state['productos_agregados'] = []
             st.rerun()
 
     st.divider()
 
-    # BOTÓN MAESTRO DE GENERACIÓN
     if st.button("🚀 Generar Factura PDF", type="primary"):
         if not st.session_state['cliente_actual']:
             st.error("⚠️ Por favor, selecciona un cliente primero.")
@@ -170,12 +169,13 @@ with col2:
             with st.spinner("Procesando y generando PDF en el servidor..."):
                 respuesta = generar_factura(payload)
                 if respuesta:
-                    # 1. Lanzamos el mensaje flotante en lugar del st.success estático
-                    st.toast(f"🎉 ¡Éxito! Factura {respuesta['numero_factura']} generada.", icon="✅")
+                    # 1. Guardamos el mensaje en la memoria antes de recargar
+                    st.session_state['toast_msg'] = f"🎉 ¡Éxito! Factura {respuesta['numero_factura']} generada."
+                    st.session_state['toast_icon'] = "✅"
                     
-                    # 2. Limpieza post-facturación
+                    # 2. Limpieza de variables
                     st.session_state['cliente_actual'] = None
                     st.session_state['productos_agregados'] = []
                     
-                    # 3. Recarga instantánea (adiós import time y time.sleep)
+                    # 3. Recargamos la pantalla
                     st.rerun()
