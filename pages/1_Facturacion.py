@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import requests
 from datetime import datetime
 from services.api import obtener_clientes, buscar_producto, generar_factura, validar_sesion
 
@@ -198,11 +199,40 @@ with col2:
             
             with st.spinner("Procesando y generando PDF en el servidor..."):
                 respuesta = generar_factura(payload)
+                
                 if respuesta:
-                    st.session_state['toast_msg'] = f"🎉 ¡Éxito! Factura {respuesta['numero_factura']} generada."
-                    st.session_state['toast_icon'] = "✅"
+                    # 1. Lanzamos las notificaciones directamente (Sin guardarlas en memoria)
+                    st.toast(f"Factura {respuesta['numero_factura']} generada", icon="✅")
+                    st.success("🎉 ¡Factura generada y guardada con éxito en la nube!")
+
+                    # ==========================================
+                    # 📥 MAGIA DE DESCARGA LOCAL
+                    # ==========================================
+                    SUPABASE_URL = "https://hxsivpxspofiwclmefvo.supabase.co"
+                    url_pdf = f"{SUPABASE_URL}/storage/v1/object/public/facturas/Factura_{respuesta['numero_factura']}.pdf"
                     
+                    # Traemos el archivo desde la nube a la memoria temporal
+                    pdf_nube = requests.get(url_pdf)
+                    
+                    if pdf_nube.status_code == 200:
+                        col_down, col_view = st.columns(2)
+                        with col_down:
+                            st.download_button(
+                                label="📥 Descargar Factura (PDF)",
+                                data=pdf_nube.content,
+                                file_name=f"Factura_{respuesta['numero_factura']}.pdf",
+                                mime="application/pdf",
+                                type="primary"
+                            )
+                        with col_view:
+                            st.link_button("👁️ Abrir en el Navegador", url_pdf)
+                    else:
+                        st.warning("El PDF se generó, pero tardó un poco en estar disponible en la nube. Revisa tu panel de Supabase.")
+                    
+                    # 2. Limpiamos la memoria del cliente y los productos
                     st.session_state['cliente_actual'] = None
                     st.session_state['productos_agregados'] = []
                     
-                    st.rerun()
+                    # ⚠️ Y ELIMINAMOS EL st.rerun() 
+                    # La pantalla conservará el estado actual (mostrando los botones de descarga)
+                    # hasta que el usuario navegue a otra página, busque un nuevo cliente o recargue la web manualmente.
