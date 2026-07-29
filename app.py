@@ -27,7 +27,7 @@ def iniciar_sesion():
 
                 payload_base64 = token.split(".")[1]
                 payload_base64 += "=" * (-len(payload_base64) % 4)
-                payload_decodificado = json.loads(base64.b64decode(payload_base64).decode("utf-8"))
+                payload_decodificado = json.loads(base64.urlsafe_b64decode(payload_base64).decode("utf-8"))
 
                 st.session_state["access_token"] = token
                 st.session_state["usuario_id"] = payload_decodificado["sub"]

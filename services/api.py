@@ -121,25 +121,31 @@ def actualizar_consecutivo(payload: dict):
 
 def validar_sesion() -> bool:
     """Revisa si hay un token activo en session_state o recupera la sesión desde la URL si hubo F5."""
-    # 1. Si ya está autenticado en memoria, continuar
-    if st.session_state.get("autenticado", False):
+    
+    # 1. Si ya estamos autenticados en memoria (Navegación normal)
+    if st.session_state.get("autenticado", False) and "access_token" in st.session_state:
+        # 🛡️ EL TRUCO: Reinyectamos el token a la URL porque Streamlit lo borra al cambiar de menú
+        st.query_params["token"] = st.session_state["access_token"]
         return True
 
-    # 2. Si hubo recarga (F5), buscar el token guardado en la URL
+    # 2. Si hubo recarga (F5) y se perdió la memoria, buscamos el token guardado en la URL
     token_in_url = st.query_params.get("token")
     if token_in_url:
         try:
-            # Decodificamos el JWT para recuperar el usuario_id
+            # Decodificamos el JWT usando 'urlsafe' (El estándar correcto para JWT)
             payload_base64 = token_in_url.split(".")[1]
             payload_base64 += "=" * (-len(payload_base64) % 4)
-            payload_decodificado = json.loads(base64.b64decode(payload_base64).decode("utf-8"))
+            payload_decodificado = json.loads(base64.urlsafe_b64decode(payload_base64).decode("utf-8"))
 
             st.session_state["access_token"] = token_in_url
             st.session_state["usuario_id"] = payload_decodificado["sub"]
             st.session_state["autenticado"] = True
+            
+            # Aseguramos que se mantenga en la URL
+            st.query_params["token"] = token_in_url
             return True
-        except Exception:
-            # Si el token era inválido o caducó, limpiamos
+        except Exception as e:
+            # Si el token es inválido o se corrompe, limpiamos todo
             st.query_params.clear()
             st.session_state.clear()
             return False
