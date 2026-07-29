@@ -8,6 +8,27 @@ st.set_page_config(
     layout="wide"
 )
 
+# ==========================================
+# CSS PARA OCULTAR NAVBAR Y AJUSTAR ESPACIOS
+# ==========================================
+st.markdown(
+    """
+    <style>
+    /* 1. Ocultar el encabezado superior (Deploy, menú, etc.) */
+    [data-testid="stHeader"] {
+        display: none !important;
+    }
+    
+    /* 2. Reducir el espacio blanco superior para eliminar el scroll */
+    .block-container {
+        padding-top: 2rem !important; 
+        padding-bottom: 0rem !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # Pequeña función para el botón global de cerrar sesión
 def cerrar_sesion():
     st.session_state.clear()
