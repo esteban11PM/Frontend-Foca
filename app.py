@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 from services.api import validar_sesion
 
 # 1. ÚNICO set_page_config de toda la aplicación
@@ -28,6 +29,27 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
+# ==========================================
+# FUNCIÓN LATIDO (KEEP-ALIVE)
+# ==========================================
+def mantener_servidor_despierto():
+    """Inyecta un script JS invisible que hace ping a Render cada 10 minutos (600,000 ms)"""
+    # Usamos tu URL real de Render
+    API_URL = "https://backend-rhe.onrender.com"
+    
+    codigo_js = f"""
+    <script>
+        console.log("Sistema de latido activado. Protegiendo contra suspensión de Render.");
+        setInterval(function() {{
+            fetch('{API_URL}/docs', {{ mode: 'no-cors' }})
+                .then(() => console.log('Ping enviado al servidor.'))
+                .catch(e => console.log('Ping silencioso.'));
+        }}, 600000); // 10 minutos
+    </script>
+    """
+    # Lo renderizamos invisiblemente
+    components.html(codigo_js, height=0, width=0)
 
 # Pequeña función para el botón global de cerrar sesión
 def cerrar_sesion():
