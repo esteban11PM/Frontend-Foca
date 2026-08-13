@@ -51,6 +51,7 @@ def mantener_servidor_despierto():
     # Lo renderizamos invisiblemente
     components.html(codigo_js, height=0, width=0)
 
+
 # Pequeña función para el botón global de cerrar sesión
 def cerrar_sesion():
     st.session_state.clear()
@@ -62,6 +63,9 @@ if not validar_sesion():
     login_page = st.Page("views/login.py", title="Iniciar Sesión", icon="🔐")
     pg = st.navigation([login_page])
 else:
+    # Iniciamos el latido porque el usuario está autenticado
+    mantener_servidor_despierto()
+    
     # Si HAY sesión, armamos el menú completo
     inicio_page = st.Page("views/dashboard.py", title="Panel Principal", icon="🚀", default=True)
     facturacion_page = st.Page("pages/1_Facturacion.py", title="Facturación", icon="🧾")
