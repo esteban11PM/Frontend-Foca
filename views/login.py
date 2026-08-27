@@ -2,7 +2,7 @@ import streamlit as st
 import requests
 from services.api import decodificar_token
 
-API_URL = "https://backend-rhe.onrender.com"
+API_URL = "http://localhost:8000"
 
 col1, col2, col3 = st.columns([1, 1.2, 1])
 

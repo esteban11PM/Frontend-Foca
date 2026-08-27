@@ -4,7 +4,7 @@ import base64
 import json
 
 # La dirección donde vive nuestro Backend (FastAPI)
-BASE_URL = "https://backend-rhe.onrender.com"
+BASE_URL = "http://localhost:8000"
 
 # ==========================================
 # 1. SERVICIOS DE CLIENTES

@@ -36,7 +36,7 @@ st.markdown(
 def mantener_servidor_despierto():
     """Inyecta un script JS invisible que hace ping a Render cada 10 minutos (600,000 ms)"""
     # Usamos tu URL real de Render
-    API_URL = "https://backend-rhe.onrender.com"
+    API_URL = "http://localhost:8000"
     
     codigo_js = f"""
     <script>
